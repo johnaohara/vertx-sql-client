@@ -23,13 +23,12 @@ import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Transaction;
 import io.vertx.sqlclient.impl.command.CommandBase;
 import io.vertx.sqlclient.impl.command.CommandResponse;
-import io.vertx.sqlclient.impl.command.CommandScheduler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.sqlclient.impl.pool.AgroalConnectionPool;
 
 /**
  * Todo :
@@ -43,7 +42,7 @@ import io.vertx.core.VertxException;
 public abstract class PoolBase<P extends PoolBase<P>> extends SqlClientBase<P> implements Pool {
 
   private final Context context;
-  private final ConnectionPool pool;
+  private final AgroalConnectionPool pool;
   private final boolean closeVertx;
 
   public PoolBase(Context context, boolean closeVertx, PoolOptions options) {
@@ -52,7 +51,7 @@ public abstract class PoolBase<P extends PoolBase<P>> extends SqlClientBase<P> i
       throw new IllegalArgumentException("Pool max size must be > 0");
     }
     this.context = context;
-    this.pool = new ConnectionPool(this::connect, maxSize, options.getMaxWaitQueueSize());
+    this.pool = new AgroalConnectionPool(this::connect, maxSize, options.getMaxWaitQueueSize());
     this.closeVertx = closeVertx;
   }
 
