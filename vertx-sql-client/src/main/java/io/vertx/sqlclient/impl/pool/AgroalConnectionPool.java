@@ -22,7 +22,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.impl.Connection;
 import io.vertx.sqlclient.impl.command.CommandBase;
-import io.vertx.sqlclient.spi.DatabaseMetadata;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -147,11 +146,6 @@ public class AgroalConnectionPool {
 
     public boolean take() {
       return stateUpdater.compareAndSet(this, State.AVAILABLE, State.IN_USE);
-    }
-
-    @Override
-    public DatabaseMetadata getDatabaseMetaData() {
-      return conn.getDatabaseMetaData();
     }
 
     @Override
