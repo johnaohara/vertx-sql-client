@@ -121,9 +121,9 @@ public class AgroalConnectionPool {
     }
   }
 
-  private static class PooledConnection implements Connection, Connection.Holder  {
+  private class PooledConnection implements Connection, Connection.Holder  {
 
-    private static final AtomicReferenceFieldUpdater<PooledConnection, State> stateUpdater = newUpdater( PooledConnection.class, State.class, "state" );
+    private final AtomicReferenceFieldUpdater<PooledConnection, State> stateUpdater = newUpdater( PooledConnection.class, State.class, "state" );
 
     private final Connection conn;
     private final AgroalConnectionPool pool;
@@ -207,7 +207,7 @@ public class AgroalConnectionPool {
         } else {
           holder.handleClosed();
         }
-        pool.check();
+        check();
       } else {
         throw new IllegalStateException();
       }
@@ -230,9 +230,10 @@ public class AgroalConnectionPool {
       return conn.getSecretKey();
     }
 
-    private enum State {
-      AVAILABLE, IN_USE, UNAVAILABLE
-    }
+  }
+
+  private enum State {
+    AVAILABLE, IN_USE, UNAVAILABLE
   }
 
   private void check() {
@@ -242,7 +243,7 @@ public class AgroalConnectionPool {
     if (!checkInProgress) {
       checkInProgress = true;
       try {
-        Handler<AsyncResult<Connection>> waiter;
+        Promise<Connection> waiter;
         while ((waiter = waiters.poll()) != null) {
 
           // thread-local cache
@@ -282,7 +283,7 @@ public class AgroalConnectionPool {
             });
           } else {
             // we wait
-//            waiters.add(waiter);
+            waiters.add(waiter);
 
             // may need to reduce the queue if maxWaitQueueSize was exceeded
             if (maxWaitQueueSize >= 0) {

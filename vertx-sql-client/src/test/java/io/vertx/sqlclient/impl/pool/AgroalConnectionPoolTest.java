@@ -18,18 +18,9 @@
 package io.vertx.sqlclient.impl.pool;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.sqlclient.impl.Connection;
-import io.vertx.sqlclient.impl.ConnectionFactory;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class AgroalConnectionPoolTest {
 
@@ -144,10 +135,12 @@ public class AgroalConnectionPoolTest {
     SimpleConnection conn = new SimpleConnection();
     queue.connect(conn);
     holder.init();
-    Future<Void> fut = holder.close();
-    assertTrue(fut.succeeded());
-    fut = holder.close();
-    assertTrue(fut.failed());
+    holder.close();
+    try {
+      holder.close();
+      fail();
+    } catch (IllegalStateException ignore) {
+    }
   }
 
   @Test
@@ -224,16 +217,11 @@ public class AgroalConnectionPoolTest {
     SimpleHolder holder2 = new SimpleHolder();
     SimpleConnection conn = new SimpleConnection();
     AgroalConnectionPool[] poolRef = new AgroalConnectionPool[1];
-    AgroalConnectionPool pool = new AgroalConnectionPool(new ConnectionFactory() {
-      @Override
-      public Future<Connection> connect() {
-        Promise<Connection> promise = Promise.promise();
-        poolRef[0].acquire(holder2);
-        assertFalse(holder2.isComplete());
-        promise.complete(conn);
-        assertFalse(holder2.isComplete());
-        return promise.future();
-      }
+    AgroalConnectionPool pool = new AgroalConnectionPool(ar -> {
+      poolRef[0].acquire(holder2);
+      assertFalse(holder2.isComplete());
+      ar.handle(Future.succeededFuture(conn));
+      assertFalse(holder2.isComplete());
     }, 1, 0);
     poolRef[0] = pool;
     SimpleHolder holder1 = new SimpleHolder();
